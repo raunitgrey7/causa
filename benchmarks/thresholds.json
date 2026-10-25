@@ -1,12 +1,12 @@
 {
-  "comment": "Quality gate for python -m causa.bench --check. Written on 2026-10-25 from theory and 150 to 400 replication pilot runs, and committed before the first full benchmark run. Coverage bands are about three Monte Carlo standard errors wide around what each interval should deliver; the cross-fitted AIPW bootstrap interval only has a lower bound because the pilots showed it is conservative by construction. Any later change to a bound must be recorded with the original failure in REPORT.md.",
+  "comment": "Quality gate for python -m causa.bench --check. The first 42 checks were written on 2026-10-25 from theory and 150 to 400 replication pilot runs and committed (4d8c7f8) before the first full benchmark run, which passed all of them. Coverage bands are about three Monte Carlo standard errors wide around what each interval should deliver; the cross-fitted AIPW bootstrap interval only has a lower bound because the pilots showed it is conservative by construction. The SRM decision-rule and API latency checks were added later, together with the measurements they gate (see REPORT.md). Any later change to a bound must be recorded with the original failure in REPORT.md.",
   "checks": [
     {"path": "ate.scenarios.moderate_overlap.estimators.difference_in_means.coverage", "max": 0.05},
-    {"path": "ate.scenarios.moderate_overlap.estimators.ipw.coverage", "min": 0.90, "max": 0.99},
-    {"path": "ate.scenarios.moderate_overlap.estimators.aipw.coverage", "min": 0.90, "max": 0.99},
-    {"path": "ate.scenarios.moderate_overlap.estimators.aipw_wald.coverage", "min": 0.90, "max": 0.99},
-    {"path": "ate.scenarios.moderate_overlap.estimators.aipw_crossfit_wald.coverage", "min": 0.90, "max": 0.99},
-    {"path": "ate.scenarios.moderate_overlap.estimators.aipw_crossfit.coverage", "min": 0.90},
+    {"path": "ate.scenarios.moderate_overlap.estimators.ipw.coverage", "min": 0.9, "max": 0.99},
+    {"path": "ate.scenarios.moderate_overlap.estimators.aipw.coverage", "min": 0.9, "max": 0.99},
+    {"path": "ate.scenarios.moderate_overlap.estimators.aipw_wald.coverage", "min": 0.9, "max": 0.99},
+    {"path": "ate.scenarios.moderate_overlap.estimators.aipw_crossfit_wald.coverage", "min": 0.9, "max": 0.99},
+    {"path": "ate.scenarios.moderate_overlap.estimators.aipw_crossfit.coverage", "min": 0.9},
     {"path": "ate.scenarios.moderate_overlap.estimators.ipw.bias", "min": -10.0, "max": 10.0},
     {"path": "ate.scenarios.moderate_overlap.estimators.aipw.bias", "min": -10.0, "max": 10.0},
     {"path": "ate.scenarios.moderate_overlap.estimators.aipw_crossfit.bias", "min": -10.0, "max": 10.0},
@@ -16,8 +16,8 @@
     {"path": "ate.scenarios.weak_overlap.estimators.aipw.coverage", "min": 0.85},
     {"path": "ate.scenarios.weak_overlap.estimators.aipw.bias", "min": -15.0, "max": 15.0},
     {"path": "ate.scenarios.weak_overlap.overlap_mean.share_outside_band", "min": 0.1},
-    {"path": "cate.learners.s_learner.pehe_rel", "max": 0.80},
-    {"path": "cate.learners.x_learner.pehe_rel", "max": 0.80},
+    {"path": "cate.learners.s_learner.pehe_rel", "max": 0.8},
+    {"path": "cate.learners.x_learner.pehe_rel", "max": 0.8},
     {"path": "cate.learners.dr_learner.pehe_rel", "max": 0.95},
     {"path": "cate.learners.s_learner.policy_value_rel", "min": 0.78},
     {"path": "cate.learners.x_learner.policy_value_rel", "min": 0.78},
@@ -42,6 +42,11 @@
     {"path": "srm.by_drop.drop_0_000.chi_square_final.rate", "max": 0.003},
     {"path": "srm.by_drop.drop_0_050.chi_square_final.rate", "min": 0.9},
     {"path": "srm.by_drop.drop_0_050.sequential.rate", "min": 0.6},
-    {"path": "srm.fault_bias.mean_estimated_effect", "min": 45.0}
+    {"path": "srm.fault_bias.mean_estimated_effect", "min": 45.0},
+    {"path": "srm.by_drop.drop_0_000.decision_rule.rate", "max": 0.01},
+    {"path": "srm.by_drop.drop_0_050.decision_rule.rate", "min": 0.9},
+    {"path": "serving.experiment_report.p95_ms", "max": 5000.0},
+    {"path": "serving.targeting.p95_ms", "max": 2000.0},
+    {"path": "serving.observational_ate.p95_ms", "max": 10000.0}
   ]
 }

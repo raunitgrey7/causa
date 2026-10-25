@@ -38,6 +38,7 @@ from causa.studies.experiments import (
     sequential_study,
     srm_study,
 )
+from causa.studies.serving import ServingStudyConfig, serving_study
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 RESULTS_FILE = "results.json"
@@ -84,6 +85,17 @@ def _configs(seed: int, quick: bool) -> dict[str, Any]:
             "cuped": CupedStudyConfig(reps=200, seed=seed),
             "sequential": SequentialStudyConfig(reps=200, seed=seed),
             "srm": SRMStudyConfig(reps=1000, bias_reps=20, seed=seed),
+            "serving": ServingStudyConfig(
+                experiment_rows=4_000,
+                experiment_requests=3,
+                customers=100,
+                targeting_requests=3,
+                ate_rows=1_000,
+                ate_boot=30,
+                ate_requests=2,
+                train_rows=3_000,
+                seed=seed,
+            ),
         }
     return {
         "ate": [
@@ -95,6 +107,7 @@ def _configs(seed: int, quick: bool) -> dict[str, Any]:
         "cuped": CupedStudyConfig(seed=seed),
         "sequential": SequentialStudyConfig(seed=seed),
         "srm": SRMStudyConfig(seed=seed),
+        "serving": ServingStudyConfig(seed=seed),
     }
 
 
@@ -127,6 +140,7 @@ def run_benchmark(seed: int, workers: int, quick: bool) -> dict[str, Any]:
         "cuped": _timed(seconds, "cuped", cuped_study, cfg["cuped"]),
         "sequential": _timed(seconds, "sequential", sequential_study, cfg["sequential"]),
         "srm": _timed(seconds, "srm", srm_study, cfg["srm"]),
+        "serving": _timed(seconds, "serving", serving_study, cfg["serving"]),
     }
     seconds["total"] = round(time.perf_counter() - started, 2)
     results["timings_seconds"] = seconds

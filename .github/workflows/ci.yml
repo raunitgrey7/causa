@@ -1,0 +1,68 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install
+        run: uv sync --all-groups --frozen
+      - name: Lint
+        run: make lint
+      - name: Test
+        run: make test
+
+  benchmark-gate:
+    # The benchmark is the quality gate: every bound in benchmarks/thresholds.json (interval coverage,
+    # bias, PEHE, policy value, false positive rates, SRM detection) must hold or the job fails.
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: lint-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install
+        run: uv sync --all-groups --frozen
+      - name: Benchmark with thresholds
+        run: uv run python -m causa.bench --check --workers 2
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: |
+            benchmarks/results.json
+            benchmarks/results.md
+
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: lint-test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t causa:ci .
+      - name: Image starts, trains its model and answers /health
+        run: |
+          docker run -d --name causa -p 8773:8773 causa:ci
+          for i in $(seq 1 60); do
+            if curl -fs http://127.0.0.1:8773/health | grep -q '"model_loaded":true'; then exit 0; fi
+            sleep 5
+          done
+          docker logs causa
+          exit 1

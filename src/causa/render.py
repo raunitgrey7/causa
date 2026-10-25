@@ -55,7 +55,8 @@ def _ate_section(results: dict[str, Any]) -> list[str]:
     truth = results["ate"]["truth"]
     lines = [
         f"True population ATE {truth['ate']:.2f} INR per customer (Monte Carlo over {truth['draws']:,} customers, "
-        f"standard error {truth['mc_se']:.3f}). Bias and coverage are followed by their Monte Carlo standard "
+        f"standard error {truth['mc_se']:.3f}); the CATE has SD {truth['sd_tau']:.1f} INR and is negative for "
+        f"{truth['share_negative']:.1%} of customers. Bias and coverage are followed by their Monte Carlo standard "
         "errors in brackets.",
         "",
     ]
@@ -178,6 +179,20 @@ def _srm_section(results: dict[str, Any]) -> list[str]:
     return lines
 
 
+def _serving_section(results: dict[str, Any]) -> list[str]:
+    s = results["serving"]
+    e, t, a = s["experiment_report"], s["targeting"], s["observational_ate"]
+    return [
+        f"Measured with an {s['client']}; latency includes validation, JSON encoding and the analysis, not a network hop.",
+        "",
+        "| call | payload | requests | p50 ms | p95 ms |",
+        "|---|---|---|---|---|",
+        f"| POST /v1/experiments (decision report) | {e['rows']:,} rows, CUPED, 14 daily looks, SRM | {e['requests']} | {e['p50_ms']:.1f} | {e['p95_ms']:.1f} |",
+        f"| POST /v1/targeting | {t['customers']:,} customers | {t['requests']} | {t['p50_ms']:.1f} | {t['p95_ms']:.1f} |",
+        f"| POST /v1/observational/ate | {a['rows']:,} rows, {a['n_boot']} refit bootstrap resamples | {a['requests']} | {a['p50_ms']:.1f} | {a['p95_ms']:.1f} |",
+    ]
+
+
 def render_markdown(results: dict[str, Any]) -> str:
     """The full ``benchmarks/results.md``."""
     lines = [
@@ -208,16 +223,52 @@ def render_markdown(results: dict[str, Any]) -> str:
         "",
         *_srm_section(results),
         "",
+        "## API latency",
+        "",
+        *_serving_section(results),
+        "",
         "Timings (seconds): " + ", ".join(f"{k} {v}" for k, v in results["timings_seconds"].items()) + ".",
         "",
     ]
     return "\n".join(lines)
 
 
+def _weak_overlap_sentence(results: dict[str, Any]) -> list[str]:
+    weak = results["ate"]["scenarios"].get("weak_overlap")
+    if weak is None:
+        return []
+    est = weak["estimators"]
+    return [
+        f"- **Weak overlap.** The diagnostics put {weak['overlap_mean']['share_outside_band']:.1%} of customers outside [0.05, 0.95]; IPW's bias grows to {est['ipw']['bias']:.2f} INR while AIPW's is {est['aipw']['bias']:.2f} INR."
+    ]
+
+
+def _headline(results: dict[str, Any]) -> list[str]:
+    """One sentence per study, every number read from the results."""
+    ate = results["ate"]["scenarios"]["moderate_overlap"]
+    est = ate["estimators"]
+    learners = results["cate"]["learners"]
+    best = max(
+        ("s_learner", "t_learner", "x_learner", "dr_learner"), key=lambda k: learners[k]["policy_value_rel"]
+    )
+    c, s, srm = results["cuped"], results["sequential"], results["srm"]
+    clean, fault = srm["by_drop"]["drop_0_000"], srm["by_drop"]["drop_0_050"]
+    return [
+        f"- **Confounding.** The naive difference in means is off by {est['difference_in_means']['bias']:.1f} INR against a true ATE of {ate['true_ate']:.2f} INR. AIPW's bias is {est['aipw']['bias']:.2f} INR (Monte Carlo SE {est['aipw']['bias_mcse']:.2f}) and its refit-bootstrap 95% interval covers the truth in {est['aipw']['coverage']:.1%} of {ate['replications']} replications.",
+        *_weak_overlap_sentence(results),
+        f"- **Targeting.** With coupons for {results['cate']['budget']:.0%} of customers, the {best} earns {learners[best]['policy_value_rel']:.1%} of the oracle's incremental revenue; the historical targeting rule earns {learners['historical_rule']['policy_value_rel']:.1%}.",
+        f"- **CUPED.** The pre-period covariate removes {c['variance_reduction']:.1%} of the variance (theory: {c['rho2']:.1%}) and lifts power from {c['difference_in_means']['power']:.1%} to {c['cuped']['power']:.1%}.",
+        f"- **Peeking.** A z-test checked at all {s['looks']} looks declares a winner in {s['aa']['reject']['naive']['rate']:.1%} of A/A tests; the mixture SPRT does so in {s['aa']['reject']['msprt']['rate']:.1%}.",
+        f"- **SRM.** A logging fault that loses {fault['drop']:.0%} of non-converting treatment users inflates the revenue effect from {srm['fault_bias']['true_effect']:.2f} to {srm['fault_bias']['mean_estimated_effect']:.2f} INR; the report's SRM rule catches it in {fault['decision_rule']['rate']:.1%} of experiments and raises a false alarm in {clean['decision_rule']['rate']:.2%} of healthy ones.",
+    ]
+
+
 def render_readme_section(results: dict[str, Any]) -> str:
     """The README results block: the same tables, generated so they cannot drift from ``results.json``."""
     lines = [
         _header(results),
+        "",
+        *_headline(results),
         "",
         "### Observational ATE: bias and interval coverage against the true ATE",
         "",
@@ -237,6 +288,10 @@ def render_readme_section(results: dict[str, Any]) -> str:
         "### Sample ratio mismatch detection",
         "",
         *_srm_section(results),
+        "",
+        "### API latency",
+        "",
+        *_serving_section(results),
         "",
         "Full tables including the value-by-budget curve: [benchmarks/results.md](benchmarks/results.md).",
     ]

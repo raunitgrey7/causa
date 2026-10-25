@@ -7,7 +7,8 @@ import pytest
 from causa.bench import check_thresholds, lookup, run_benchmark, update_readme, write_results
 from causa.render import render_markdown, render_readme_section
 
-VOLATILE = ("generated_at", "timings_seconds", "environment")
+# Wall-clock measurements (timings, API latencies) and run metadata legitimately differ between runs.
+VOLATILE = ("generated_at", "timings_seconds", "environment", "serving")
 
 
 def _stable(results: dict) -> dict:

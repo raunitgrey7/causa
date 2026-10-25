@@ -245,19 +245,27 @@ def simulate_campaign(config: CampaignConfig) -> CampaignData:
 def population_ate(
     config: CampaignConfig, n_draws: int = 2_000_000, chunk: int = 250_000
 ) -> dict[str, float]:
-    """Population ATE E[tau(X)] by Monte Carlo over fresh customers, with its Monte Carlo standard error.
+    """Population ATE E[tau(X)] by Monte Carlo over fresh customers, with its Monte Carlo standard error,
+    the spread of the CATE and the share of customers the coupon hurts.
 
     The covariate draw uses its own seed stream so the estimand does not depend on which campaign seed a
     benchmark replication uses.
     """
     rng = np.random.default_rng([config.seed, 20_251_025])
-    total, total_sq, done = 0.0, 0.0, 0
+    total, total_sq, negative, done = 0.0, 0.0, 0, 0
     while done < n_draws:
         size = min(chunk, n_draws - done)
         tau = potential_outcomes(simulate_customers(size, rng), config).cate
         total += float(tau.sum())
         total_sq += float(np.square(tau).sum())
+        negative += int((tau < 0).sum())
         done += size
     mean = total / done
     var = max(total_sq / done - mean**2, 0.0)
-    return {"ate": mean, "mc_se": float(np.sqrt(var / done)), "sd_tau": float(np.sqrt(var)), "draws": done}
+    return {
+        "ate": mean,
+        "mc_se": float(np.sqrt(var / done)),
+        "sd_tau": float(np.sqrt(var)),
+        "share_negative": negative / done,
+        "draws": done,
+    }
