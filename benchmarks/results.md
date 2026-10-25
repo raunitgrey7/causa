@@ -1,6 +1,6 @@
 # causa benchmark results
 
-Seed 42, generated 2026-10-25T05:38:59+00:00, commit `f0ab2e5`, Python 3.13.17, numpy 2.5.4, scikit-learn 1.9.1 on Darwin arm64, 2 worker processes. Total benchmark time 213.28 s.
+Seed 42, generated 2026-10-25T05:52:19+00:00, commit `2b6b3f9`, Python 3.13.17, numpy 2.5.4, scikit-learn 1.9.1 on Darwin arm64, 2 worker processes. Total benchmark time 268.31 s.
 
 ## Observational ATE on a confounded campaign
 
@@ -100,8 +100,8 @@ Measured with an in-process starlette TestClient, sequential requests, 2 threads
 
 | call | payload | requests | p50 ms | p95 ms |
 |---|---|---|---|---|
-| POST /v1/experiments (decision report) | 40,000 rows, CUPED, 14 daily looks, SRM | 15 | 53.0 | 55.9 |
-| POST /v1/targeting | 1,000 customers | 40 | 28.9 | 29.8 |
-| POST /v1/observational/ate | 4,000 rows, 100 refit bootstrap resamples | 8 | 171.0 | 184.0 |
+| POST /v1/experiments (decision report) | 40,000 rows, CUPED, 14 daily looks, SRM | 15 | 65.2 | 67.2 |
+| POST /v1/targeting | 1,000 customers | 40 | 38.5 | 40.6 |
+| POST /v1/observational/ate | 4,000 rows, 100 refit bootstrap resamples | 8 | 291.5 | 308.1 |
 
-Timings (seconds): true_ate 0.88, ate_moderate_overlap 78.58, ate_weak_overlap 90.89, cate 17.45, cuped 5.82, sequential 10.75, srm 2.95, serving 5.94, total 213.28.
+Timings (seconds): true_ate 1.05, ate_moderate_overlap 102.53, ate_weak_overlap 114.76, cate 18.13, cuped 6.63, sequential 12.92, srm 3.82, serving 8.46, total 268.31.

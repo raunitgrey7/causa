@@ -87,7 +87,7 @@ curl -s -X POST localhost:8773/v1/experiments/simulate -H 'content-type: applica
 ## Results
 
 <!-- RESULTS:BEGIN -->
-Seed 42, generated 2026-10-25T05:38:59+00:00, commit `f0ab2e5`, Python 3.13.17, numpy 2.5.4, scikit-learn 1.9.1 on Darwin arm64, 2 worker processes. Total benchmark time 213.28 s.
+Seed 42, generated 2026-10-25T05:52:19+00:00, commit `2b6b3f9`, Python 3.13.17, numpy 2.5.4, scikit-learn 1.9.1 on Darwin arm64, 2 worker processes. Total benchmark time 268.31 s.
 
 - **Confounding.** The naive difference in means is off by 165.2 INR against a true ATE of 20.62 INR. AIPW's bias is -1.77 INR (Monte Carlo SE 1.59) and its refit-bootstrap 95% interval covers the truth in 93.6% of 500 replications.
 - **Weak overlap.** The diagnostics put 26.5% of customers outside [0.05, 0.95]; IPW's bias grows to 9.99 INR while AIPW's is 3.64 INR.
@@ -184,9 +184,9 @@ Measured with an in-process starlette TestClient, sequential requests, 2 threads
 
 | call | payload | requests | p50 ms | p95 ms |
 |---|---|---|---|---|
-| POST /v1/experiments (decision report) | 40,000 rows, CUPED, 14 daily looks, SRM | 15 | 53.0 | 55.9 |
-| POST /v1/targeting | 1,000 customers | 40 | 28.9 | 29.8 |
-| POST /v1/observational/ate | 4,000 rows, 100 refit bootstrap resamples | 8 | 171.0 | 184.0 |
+| POST /v1/experiments (decision report) | 40,000 rows, CUPED, 14 daily looks, SRM | 15 | 65.2 | 67.2 |
+| POST /v1/targeting | 1,000 customers | 40 | 38.5 | 40.6 |
+| POST /v1/observational/ate | 4,000 rows, 100 refit bootstrap resamples | 8 | 291.5 | 308.1 |
 
 Full tables including the value-by-budget curve: [benchmarks/results.md](benchmarks/results.md).
 <!-- RESULTS:END -->
