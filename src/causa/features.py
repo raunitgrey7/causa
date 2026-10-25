@@ -31,7 +31,6 @@ FEATURE_NAMES: tuple[str, ...] = (
     "tier_2",
     "tier_3",
 )
-CONTINUOUS: tuple[int, ...] = (0, 1, 2, 3, 4, 5, 6)
 REQUIRED_COLUMNS: tuple[str, ...] = (
     "tenure_months",
     "orders_12m",
@@ -96,6 +95,12 @@ def feature_matrix(customers: pd.DataFrame) -> np.ndarray:
     )
 
 
+def infer_continuous(X: np.ndarray) -> tuple[int, ...]:
+    """Indices of columns with more than two distinct values; binary columns are not squared."""
+    X = np.asarray(X, dtype=float)
+    return tuple(j for j in range(X.shape[1]) if len(np.unique(X[:, j])) > 2)
+
+
 @dataclass(frozen=True)
 class Basis:
     """Intercept, standardised features, squares and pairwise products of the continuous features."""
@@ -105,13 +110,14 @@ class Basis:
     continuous: tuple[int, ...]
 
     @classmethod
-    def fit(cls, X: np.ndarray, continuous: tuple[int, ...] = CONTINUOUS) -> Basis:
-        """Learn the standardisation from training rows only, so held-out folds stay held out."""
+    def fit(cls, X: np.ndarray, continuous: tuple[int, ...] | None = None) -> Basis:
+        """Learn the standardisation from training rows; continuous columns are inferred when not given."""
         X = np.asarray(X, dtype=float)
         if X.ndim != 2 or X.shape[0] < 2:
             raise ValueError("Basis.fit needs a 2-D array with at least two rows")
         scale = X.std(axis=0)
-        return cls(mean=X.mean(axis=0), scale=np.where(scale > 1e-12, scale, 1.0), continuous=continuous)
+        cont = infer_continuous(X) if continuous is None else continuous
+        return cls(mean=X.mean(axis=0), scale=np.where(scale > 1e-12, scale, 1.0), continuous=cont)
 
     @property
     def n_columns(self) -> int:

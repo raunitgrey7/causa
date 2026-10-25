@@ -48,6 +48,7 @@ METHODS: tuple[str, ...] = (
     "aipw_crossfit_wald",
 )
 MIN_PER_ARM = 10
+MAX_CACHED_OUTER = 16_000_000
 
 
 @dataclass(frozen=True)
@@ -114,12 +115,16 @@ class ATEResult:
 @dataclass(frozen=True)
 class _Design:
     Z: np.ndarray
-    ZZ: np.ndarray
+    ZZ: np.ndarray | None
     t: np.ndarray
     y: np.ndarray
     folds: np.ndarray
     ridge: float
     clip: float
+
+    def outer(self, rows: np.ndarray) -> np.ndarray | None:
+        """Cached outer products of ``rows``, or None when the cache was too large to build."""
+        return None if self.ZZ is None else self.ZZ[rows]
 
 
 def bootstrap_weights(n: int, n_boot: int, rng: np.random.Generator) -> np.ndarray:
@@ -141,14 +146,14 @@ def _arm_means(d: _Design, W: np.ndarray, rows: np.ndarray, Z_eval: np.ndarray) 
     for arm in (0.0, 1.0):
         fit_rows = rows & (d.t == arm)
         y = d.y[fit_rows]
-        beta = weighted_ridge(d.Z[fit_rows], y, W[:, fit_rows], d.ridge, d.ZZ[fit_rows])
+        beta = weighted_ridge(d.Z[fit_rows], y, W[:, fit_rows], d.ridge, d.outer(fit_rows))
         out.append(np.clip(predict_linear(Z_eval, beta), y.min(), y.max()))
     return out[0], out[1]
 
 
 def _propensity(d: _Design, W: np.ndarray, rows: np.ndarray, Z_eval: np.ndarray) -> np.ndarray:
     """Clipped propensity ``(B, n_eval)``; resamples start Newton from the original-sample solution."""
-    Z, t, ZZ = d.Z[rows], d.t[rows], d.ZZ[rows]
+    Z, t, ZZ = d.Z[rows], d.t[rows], d.outer(rows)
     start = weighted_logistic(Z, t, W[:1, rows], d.ridge, ZZ)[0]
     beta = weighted_logistic(Z, t, W[:, rows], d.ridge, ZZ, init=start)
     return np.clip(predict_logistic(Z_eval, beta), d.clip, 1.0 - d.clip)
@@ -219,7 +224,8 @@ def estimate_ate(
     rng = np.random.default_rng(config.seed)
     Z = Basis.fit(X).transform(X)
     n = len(t)
-    d = _Design(Z, row_outer(Z), t, y, rng.permutation(n) % config.folds, config.ridge, config.clip)
+    ZZ = row_outer(Z) if n * Z.shape[1] ** 2 <= MAX_CACHED_OUTER else None
+    d = _Design(Z, ZZ, t, y, rng.permutation(n) % config.folds, config.ridge, config.clip)
     W = bootstrap_weights(n, config.n_boot, rng)
     everyone = np.ones(n, dtype=bool)
     e = _propensity(d, W, everyone, Z)

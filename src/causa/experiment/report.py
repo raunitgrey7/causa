@@ -94,7 +94,7 @@ class EffectSummary:
     treatment_mean: float
     effect: float
     se: float
-    relative_effect: float
+    relative_effect: float | None
     fixed_ci: tuple[float, float]
     fixed_p_value: float
     always_valid_ci: tuple[float, float]
@@ -220,7 +220,7 @@ def _summarise(method: str, contrast: Contrast, sprt: MixtureSPRT, alpha: float)
         treatment_mean=float(contrast.treatment_mean[-1]),
         effect=float(contrast.effect[-1]),
         se=float(contrast.se[-1]),
-        relative_effect=float(rel[-1]),
+        relative_effect=float(rel[-1]) if np.isfinite(rel[-1]) else None,
         fixed_ci=(float(lo[-1]), float(hi[-1])),
         fixed_p_value=float(contrast.p_value()[-1]),
         always_valid_ci=(float(lo_av[-1]), float(hi_av[-1])),

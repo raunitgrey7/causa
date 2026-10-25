@@ -19,6 +19,7 @@ import numpy as np
 from scipy.special import expit
 
 MAX_NEWTON_STEP = 5.0
+GRAM_CHUNK_ELEMENTS = 4_000_000
 
 
 def row_outer(Z: np.ndarray) -> np.ndarray:
@@ -34,11 +35,19 @@ def _penalty(d: int, lam: float) -> np.ndarray:
 
 
 def _gram(V: np.ndarray, Z: np.ndarray, ZZ: np.ndarray | None) -> np.ndarray:
-    """Weighted Gram matrices ``Z^T diag(v_b) Z`` for every row ``v_b`` of ``V``."""
+    """Weighted Gram matrices ``Z^T diag(v_b) Z`` for every row ``v_b`` of ``V``.
+
+    With cached outer products ``ZZ`` this is one matrix product; without, the outer products are built
+    in row chunks of at most ``GRAM_CHUNK_ELEMENTS`` numbers, so memory stays bounded for large uploads.
+    """
     d = Z.shape[1]
-    if ZZ is None:
-        return np.einsum("bn,ni,nj->bij", V, Z, Z, optimize=True)
-    return (V @ ZZ).reshape(len(V), d, d)
+    if ZZ is not None:
+        return (V @ ZZ).reshape(len(V), d, d)
+    out = np.zeros((len(V), d * d))
+    step = max(1, GRAM_CHUNK_ELEMENTS // (d * d))
+    for start in range(0, len(Z), step):
+        out += V[:, start : start + step] @ row_outer(Z[start : start + step])
+    return out.reshape(len(V), d, d)
 
 
 def _check(Z: np.ndarray, y: np.ndarray, W: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
