@@ -137,6 +137,7 @@ def expected_effects(config: ExperimentConfig) -> dict[str, float]:
         "revenue": control_revenue * config.lift,
         "revenue_control_mean": control_revenue,
         "converted": p1 - p0,
+        "converted_control": p0,
         "support_contact": config.support_harm,
         "page_load_ms": config.latency_shift_ms,
     }

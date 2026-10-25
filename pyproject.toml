@@ -49,6 +49,8 @@ ignore = ["ANN401", "PLR0913", "PLR2004", "RUF012", "N803", "N806"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["PLR0915", "PLR0912", "ANN"]
+# Markdown table templates: splitting each f-string mid-sentence would make them harder to read and edit.
+"src/causa/render.py" = ["E501"]
 
 [tool.ruff.lint.pylint]
 max-args = 9
