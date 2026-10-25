@@ -3,14 +3,15 @@
 A CATE model is only useful for targeting if it ranks customers well, so the evaluation is about rankings:
 
 * Qini curve (Radcliffe 2007). Sort a randomised holdout by predicted uplift; after the top ``k`` rows,
-  ``Q(k) = Y_t(k) - Y_c(k) * N_t(k) / N_c(k)`` is the incremental outcome of treating those ``k``,
-  estimated by scaling the control sum to the treated count. Curves are divided by the holdout size, so
-  the y axis reads "incremental revenue per customer in the base".
+  ``Q(k) = Y_t(k) - Y_c(k) * N_t(k) / N_c(k)`` is the incremental outcome among the treated customers in
+  the top ``k``, with the control sum scaled to the treated count. With a 50/50 split it is about half of
+  what treating all ``k`` would add. Curves are divided by the holdout size.
 * Qini coefficient: area between the Qini curve and the straight line of random targeting, over the
   targeted fraction from 0 to 1. Zero means no better than random.
 * Uplift curve and AUUC: ``U(k) = (Y_t(k) / N_t(k) - Y_c(k) / N_c(k)) * k``, the difference of the two
-  arm means in the top ``k`` scaled to ``k`` customers; AUUC is its area. It weighs the top of the ranking
-  less noisily than the Qini curve when the arms are unbalanced within the top rows.
+  arm means in the top ``k`` scaled to all ``k`` customers, so it estimates the incremental outcome of
+  treating the top ``k``; AUUC is its area. For a perfect ranking of standard normal effects the AUUC
+  tends to ``1 / (2 sqrt(pi))`` and the Qini coefficient to half of that, which the tests check.
 * True gain curve: with ground truth, ``G(k)`` is the sum of the true CATE of the top ``k``, which is what
   the Qini and uplift curves estimate.
 

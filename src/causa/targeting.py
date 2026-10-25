@@ -20,6 +20,7 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
+from threadpoolctl import threadpool_limits
 
 from causa import __version__
 from causa.data.campaign import CampaignConfig, simulate_campaign
@@ -28,6 +29,7 @@ from causa.learners import LEARNERS, CATELearner, make_learner
 from causa.uplift import auuc, budget_policy, ipw_policy_value, qini_coefficient
 
 CURVE_BUDGETS: tuple[float, ...] = (0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.75, 1.0)
+TRAIN_THREADS = 2
 
 
 @dataclass(frozen=True)
@@ -84,12 +86,18 @@ def _validate_learners(
 def train_targeting_model(
     n_train: int = 50_000, n_holdout: int = 20_000, seed: int = 42, learners: tuple[str, ...] = LEARNERS
 ) -> TargetingModel:
-    """Fit every learner on a simulated campaign history and keep the best by holdout Qini."""
+    """Fit every learner on a simulated campaign history and keep the best by holdout Qini.
+
+    Training is capped at ``TRAIN_THREADS`` OpenMP threads so a server start does not take over the machine.
+    """
     train = simulate_campaign(CampaignConfig(n=n_train, seed=seed))
     holdout = simulate_campaign(CampaignConfig(n=n_holdout, seed=seed + 1, randomized=True))
     X, Xh = feature_matrix(train.customers), feature_matrix(holdout.customers)
-    fitted = {name: make_learner(name, seed=seed).fit(X, train.treatment, train.revenue) for name in learners}
-    validation = _validate_learners(fitted, Xh, holdout.revenue, holdout.treatment)
+    with threadpool_limits(TRAIN_THREADS):
+        fitted = {
+            name: make_learner(name, seed=seed).fit(X, train.treatment, train.revenue) for name in learners
+        }
+        validation = _validate_learners(fitted, Xh, holdout.revenue, holdout.treatment)
     best = max(validation, key=lambda name: validation[name]["qini"])
     scores = fitted[best].predict(Xh)
     curve = [

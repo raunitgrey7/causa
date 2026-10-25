@@ -34,7 +34,7 @@ from dataclasses import asdict, dataclass
 import numpy as np
 from scipy.stats import norm
 
-from causa.features import FEATURE_NAMES, Basis
+from causa.features import Basis
 from causa.linear import predict_linear, predict_logistic, row_outer, weighted_logistic, weighted_ridge
 from causa.propensity import DEFAULT_CLIP, OverlapReport, overlap_report
 
@@ -215,12 +215,18 @@ def estimate_ate(
     t: np.ndarray,
     y: np.ndarray,
     config: ATEConfig | None = None,
-    feature_names: tuple[str, ...] | list[str] = FEATURE_NAMES,
+    feature_names: tuple[str, ...] | list[str] | None = None,
     diagnostics: bool = True,
 ) -> ATEResult:
-    """Estimate the ATE of ``t`` on ``y`` by every method in ``METHODS``, bootstrapping all refits at once."""
+    """Estimate the ATE of ``t`` on ``y`` by every method in ``METHODS``, bootstrapping all refits at once.
+
+    ``feature_names`` label the balance table; they default to ``x0, x1, ...``.
+    """
     config = config or ATEConfig()
     X, t, y = _validate(X, t, y)
+    names = list(feature_names) if feature_names is not None else [f"x{j}" for j in range(X.shape[1])]
+    if len(names) != X.shape[1]:
+        raise ValueError(f"{len(names)} feature names for {X.shape[1]} covariate columns")
     rng = np.random.default_rng(config.seed)
     Z = Basis.fit(X).transform(X)
     n = len(t)
@@ -242,5 +248,5 @@ def estimate_ate(
         "aipw_crossfit": _percentile("aipw_crossfit", _weighted_mean(W, phi_cf), a),
         "aipw_crossfit_wald": _wald("aipw_crossfit_wald", phi_cf[0], a),
     }
-    overlap = overlap_report(X, t.astype(int), e[0], feature_names) if diagnostics else None
+    overlap = overlap_report(X, t.astype(int), e[0], names) if diagnostics else None
     return ATEResult(estimates=estimates, overlap=overlap, n=n, n_boot=config.n_boot)

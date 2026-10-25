@@ -8,8 +8,10 @@ still reported, labelled as such.
 
 Decision rule, applied in order:
 
-1. ``invalid``: the sample ratio test fails (sequential SRM p-value below ``srm_alpha`` when there are
-   daily looks, chi-square otherwise). Nothing else is trusted.
+1. ``invalid``: a sample ratio check fails, that is the chi-square test on the latest counts or the
+   sequential SRM test over the daily looks is below ``srm_alpha``. Re-running the chi-square every day
+   inflates its false alarm rate (the benchmark measures by how much), but the costs are lopsided: a false
+   alarm costs an investigation, a missed mismatch ships a biased result. Nothing else is trusted.
 2. ``do_not_ship``: a guardrail fails, or the primary metric is significantly worse.
 3. ``ship``: the primary metric is significantly better and every guardrail passes.
 4. ``keep_running``: the primary metric is significantly better but a guardrail is not yet cleared.
@@ -281,6 +283,11 @@ def _decide(
     unclear = [g.metric for g in guardrails if g.status == "inconclusive"]
     significant = primary.always_valid_p_value < spec.alpha
     need = max(power.required_n_per_arm - min(power.n_control, power.n_treatment), 0)
+    waiting = (
+        f"no decision yet: about {need} more users per arm give {spec.power:.0%} power at MDE {power.mde:.4g}"
+        if need
+        else f"planned sample reached, but the {interval} still includes effects of size {power.mde:.4g}"
+    )
     rules = [
         (
             srm_p < spec.srm_alpha,
@@ -308,9 +315,7 @@ def _decide(
     for hit, decision, reason in rules:
         if hit:
             return decision, [reason]
-    return "keep_running", [
-        f"no decision yet: about {need} more users per arm give {spec.power:.0%} power at MDE {power.mde:.4g}"
-    ]
+    return "keep_running", [waiting]
 
 
 def _looks(
@@ -357,8 +362,7 @@ def analyze_experiment(frame: pd.DataFrame, spec: ExperimentSpec | None = None) 
     counts = np.column_stack([n_c, n_t])
     srm_seq = float(sequential_srm_p_values(counts, [1.0 - spec.treatment_share, spec.treatment_share])[-1])
     guardrails = [_guardrail(table, g, spec.alpha) for g in spec.guardrails]
-    decision_srm = srm_seq if len(table.days) > 1 else srm.p_value
-    decision, reasons = _decide(primary, power, decision_srm, guardrails, spec)
+    decision, reasons = _decide(primary, power, min(srm.p_value, srm_seq), guardrails, spec)
     warnings = []
     if len(table.days) == 1:
         warnings.append("no day column: the analysis treats the data as a single look")

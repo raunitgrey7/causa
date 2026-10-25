@@ -10,9 +10,9 @@ decision report uses, so the studies measure the shipped code path.
 * Peeking: under A/A (no effect), how often a z-test checked at every look, a fixed-horizon z-test and the
   mixture SPRT (with and without CUPED) declare a winner; under A/B, their power and the number of users
   at which the sequential test stops.
-* SRM: how often the chi-square test (checked once or daily) and the sequential SRM test raise an alarm,
-  with no fault and with a logging fault that drops a share of non-converting treatment users, plus the
-  bias that fault puts into the revenue effect.
+* SRM: how often the chi-square test (checked once or daily), the sequential SRM test and the decision
+  report's rule (either of the two, re-run daily) raise an alarm, with no fault and with a logging fault
+  that drops a share of non-converting treatment users, plus the bias that fault puts into the effect.
 """
 
 from __future__ import annotations
@@ -219,6 +219,7 @@ def srm_study(cfg: SRMStudyConfig) -> dict[str, object]:
             "chi_square_final": _rate(p_daily[:, -1] < SRM_ALPHA),
             "chi_square_daily": _rate((p_daily < SRM_ALPHA).any(axis=1)),
             "sequential": _rate(seq[:, -1] < SRM_ALPHA),
+            "decision_rule": _rate((p_daily < SRM_ALPHA).any(axis=1) | (seq[:, -1] < SRM_ALPHA)),
         }
     worst = max(cfg.drops)
     return {

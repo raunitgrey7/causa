@@ -78,9 +78,10 @@ def sequential_srm_p_values(
 ) -> np.ndarray:
     """Always-valid SRM p-values from cumulative arm counts ``(..., looks, arms)``.
 
-    The Dirichlet prior is centred on the planned split ``expected`` with total mass ``concentration``,
-    so its standard deviation on a 50/50 split is about 1.6 points of share: tuned to the size of fault a
-    logging bug produces, not to gross misallocation that any test would catch.
+    The Dirichlet prior is centred on the planned split ``expected`` with total mass ``concentration``.
+    At the default of 1000 its standard deviation on a 50/50 split is about 1.6 points of share, so the test
+    is quickest on faults of a point or more; smaller faults need many users, and the decision report pairs
+    this test with the chi-square check for them.
     """
     counts = np.asarray(counts, dtype=float)
     p0 = np.asarray(expected, dtype=float)

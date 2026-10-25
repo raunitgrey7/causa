@@ -163,11 +163,12 @@ def _srm_section(results: dict[str, Any]) -> list[str]:
         f"{s['reps']:,} experiments of {s['n_users']:,} users over {s['days']} days per row, alarm threshold "
         f"p < {s['alpha']}. The fault drops that share of non-converting treatment users from the logs.",
         "",
-        "| fault (share lost) | chi-square once at the end | chi-square checked daily | sequential SRM, daily |",
-        "|---|---|---|---|",
+        "| fault (share lost) | chi-square once at the end | chi-square checked daily | sequential SRM, daily | report rule (either, daily) |",
+        "|---|---|---|---|---|",
     ]
     for row in s["by_drop"].values():
-        cells = [f"{row[k]['rate']:.4f}" for k in ("chi_square_final", "chi_square_daily", "sequential")]
+        keys = ("chi_square_final", "chi_square_daily", "sequential", "decision_rule")
+        cells = [f"{row[k]['rate']:.4f}" for k in keys]
         lines.append(f"| {row['drop']:.3f} | " + " | ".join(cells) + " |")
     lines += [
         "",
