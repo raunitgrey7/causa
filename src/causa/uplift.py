@@ -39,12 +39,6 @@ class Curve:
         """Trapezoidal area over the fraction axis."""
         return float(np.trapezoid(self.value, self.fraction))
 
-    def sample(self, points: int = 21) -> dict[str, list[float]]:
-        """Values at evenly spaced fractions, for JSON and plots."""
-        grid = np.linspace(0.0, 1.0, points)
-        values = np.interp(grid, self.fraction, self.value)
-        return {"fraction": grid.round(4).tolist(), "value": values.tolist()}
-
 
 def _check(score: np.ndarray, *arrays: np.ndarray) -> tuple[np.ndarray, ...]:
     score = np.asarray(score, dtype=float)

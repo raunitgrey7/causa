@@ -1,10 +1,10 @@
 # causa benchmark results
 
-Seed 42, generated 2026-10-25T04:59:24+00:00, commit `4d8c7f8`, Python 3.13.17, numpy 2.5.4, scikit-learn 1.9.1 on Darwin arm64, 2 worker processes. Total benchmark time 191.94 s.
+Seed 42, generated 2026-10-25T05:31:29+00:00, commit `af2660b`, Python 3.13.17, numpy 2.5.4, scikit-learn 1.9.1 on Darwin arm64, 2 worker processes. Total benchmark time 264.33 s.
 
 ## Observational ATE on a confounded campaign
 
-True population ATE 20.62 INR per customer (Monte Carlo over 4,000,000 customers, standard error 0.064). Bias and coverage are followed by their Monte Carlo standard errors in brackets.
+True population ATE 20.62 INR per customer (Monte Carlo over 4,000,000 customers, standard error 0.064); the CATE has SD 128.1 INR and is negative for 46.1% of customers. Bias and coverage are followed by their Monte Carlo standard errors in brackets.
 
 #### moderate_overlap (targeting strength 1.0): 500 replications of 4000 customers, 200 refit bootstrap resamples each
 
@@ -84,14 +84,24 @@ Under A/B the CUPED mixture SPRT stops after 14,351 users on average (median 15,
 
 10,000 experiments of 100,000 users over 14 days per row, alarm threshold p < 0.001. The fault drops that share of non-converting treatment users from the logs.
 
-| fault (share lost) | chi-square once at the end | chi-square checked daily | sequential SRM, daily |
-|---|---|---|---|
-| 0.000 | 0.0016 | 0.0070 | 0.0004 |
-| 0.005 | 0.0026 | 0.0116 | 0.0005 |
-| 0.010 | 0.0092 | 0.0240 | 0.0005 |
-| 0.020 | 0.0942 | 0.1477 | 0.0180 |
-| 0.050 | 0.9512 | 0.9649 | 0.7695 |
+| fault (share lost) | chi-square once at the end | chi-square checked daily | sequential SRM, daily | report rule (either, daily) |
+|---|---|---|---|---|
+| 0.000 | 0.0016 | 0.0070 | 0.0004 | 0.0070 |
+| 0.005 | 0.0026 | 0.0116 | 0.0005 | 0.0116 |
+| 0.010 | 0.0092 | 0.0240 | 0.0005 | 0.0240 |
+| 0.020 | 0.0942 | 0.1477 | 0.0180 | 0.1477 |
+| 0.050 | 0.9512 | 0.9649 | 0.7695 | 0.9649 |
 
 With a 5% fault the naive revenue effect averages 61.45 INR against a true 29.40 INR (200 experiments).
 
-Timings (seconds): true_ate 0.9, ate_moderate_overlap 77.49, ate_weak_overlap 82.19, cate 12.69, cuped 5.33, sequential 10.35, srm 2.97, total 191.94.
+## API latency
+
+Measured with an in-process starlette TestClient, sequential requests, 2 threads; latency includes validation, JSON encoding and the analysis, not a network hop.
+
+| call | payload | requests | p50 ms | p95 ms |
+|---|---|---|---|---|
+| POST /v1/experiments (decision report) | 40,000 rows, CUPED, 14 daily looks, SRM | 15 | 51.5 | 54.8 |
+| POST /v1/targeting | 1,000 customers | 40 | 27.4 | 28.7 |
+| POST /v1/observational/ate | 4,000 rows, 100 refit bootstrap resamples | 8 | 164.0 | 169.2 |
+
+Timings (seconds): true_ate 0.92, ate_moderate_overlap 103.67, ate_weak_overlap 120.95, cate 14.04, cuped 5.44, sequential 10.53, srm 2.94, serving 5.82, total 264.33.

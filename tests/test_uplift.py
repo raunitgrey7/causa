@@ -121,9 +121,3 @@ def test_invalid_inputs():
         auuc(np.array([1.0, np.nan]), np.ones(2), np.array([0.0, 1.0]))
     with pytest.raises(ValueError, match="0 or 1"):
         qini_curve(np.ones(2), np.ones(2), np.array([0.0, 2.0]))
-
-
-def test_curve_sampling_for_plots():
-    tau, t, y = randomised_world(500, 4)
-    sampled = qini_curve(tau, y, t).sample(11)
-    assert len(sampled["fraction"]) == 11 and sampled["value"][0] == 0.0

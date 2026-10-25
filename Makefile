@@ -22,7 +22,8 @@ test:
 	$(UV) run pytest -q
 
 # The published run: writes benchmarks/results.json and results.md, copies the tables into README.md and
-# fails if any check in benchmarks/thresholds.json fails. About three minutes on two worker processes.
+# fails if any check in benchmarks/thresholds.json fails. Three to five minutes on two worker processes,
+# depending on what else the machine is running.
 bench:
 	$(UV) run python -m causa.bench --check --update-readme
 

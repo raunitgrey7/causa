@@ -137,7 +137,7 @@ later together with the measurements they gate; REPORT.md lists them.
 ## 8. How to reproduce
 
 ```
-make bench                                   # the published run, about three minutes on two worker processes
+make bench                                   # the published run, 3 to 5 minutes on two worker processes
 uv run python -m causa.bench --quick --out build/quick   # seconds; small sizes, not the published numbers
 uv run python -m causa.bench --no-run --check            # re-apply the gate to the committed results
 ```

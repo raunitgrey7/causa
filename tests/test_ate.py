@@ -1,5 +1,7 @@
 """ATE estimators: closed-form identities, recovery on a known world, determinism and hostile inputs."""
 
+import json
+
 import numpy as np
 import pytest
 
@@ -7,6 +9,10 @@ from causa.ate import METHODS, ATEConfig, Estimate, _aipw_score, bootstrap_weigh
 from causa.data.campaign import CampaignConfig, population_ate, simulate_campaign
 from causa.features import feature_matrix
 from tests.conftest import linear_world
+
+
+def covers(est: Estimate, value: float) -> bool:
+    return est.ci_low <= value <= est.ci_high
 
 
 def test_bootstrap_weights_row_zero_is_the_sample_and_rows_are_resamples():
@@ -39,7 +45,7 @@ def test_confounded_world_naive_is_biased_and_doubly_robust_is_not():
     truth = float(w["tau"].mean())
     naive, aipw = result.estimates["difference_in_means"], result.estimates["aipw"]
     assert naive.estimate - truth > 5 * naive.se
-    assert aipw.covers(truth)
+    assert covers(aipw, truth)
 
 
 def test_aipw_score_with_true_nuisances_is_unbiased():
@@ -57,8 +63,8 @@ def test_aipw_score_with_true_nuisances_is_unbiased():
 def test_campaign_estimate_covers_the_population_ate(campaign):
     truth = population_ate(CampaignConfig(), n_draws=400_000)["ate"]
     result = estimate_ate(feature_matrix(campaign.customers), campaign.treatment, campaign.revenue)
-    assert result.estimates["aipw"].covers(truth)
-    assert not result.estimates["difference_in_means"].covers(truth)
+    assert covers(result.estimates["aipw"], truth)
+    assert not covers(result.estimates["difference_in_means"], truth)
     assert set(result.estimates) == set(METHODS)
 
 
@@ -118,10 +124,12 @@ def test_config_validation(kwargs):
         ATEConfig(**kwargs)
 
 
-def test_estimate_helpers():
-    est = Estimate("x", 1.0, 0.5, 0.0, 2.0, "wald")
-    assert est.covers(1.9) and not est.covers(2.1)
-    assert est.width == 2.0
+def test_result_serialises_to_plain_json(campaign):
+    result = estimate_ate(
+        feature_matrix(campaign.customers), campaign.treatment, campaign.revenue, ATEConfig(n_boot=20)
+    )
+    payload = json.loads(json.dumps(result.to_dict(), allow_nan=False))
+    assert set(payload["estimates"]) == set(METHODS) and payload["n_boot"] == 20
 
 
 def test_weak_overlap_campaign_is_flagged():

@@ -9,7 +9,7 @@ on every experiment, and a false alarm stops a healthy test.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 
 import numpy as np
 from scipy.stats import chi2
@@ -28,10 +28,6 @@ class SRMResult:
     p_value: float
     alpha: float
     mismatch: bool
-
-    def to_dict(self) -> dict[str, object]:
-        """Plain-JSON form."""
-        return asdict(self)
 
 
 def chi_square_statistic(counts: np.ndarray, expected: np.ndarray) -> tuple[np.ndarray, np.ndarray]:

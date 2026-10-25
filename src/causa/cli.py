@@ -79,6 +79,9 @@ def _ate(args: argparse.Namespace) -> int:
         ATEConfig(n_boot=args.n_boot, seed=args.seed),
         feature_names=FEATURE_NAMES,
     )
+    if args.json:
+        print(json.dumps(result.to_dict(), indent=2))
+        return 0
     for name, est in result.estimates.items():
         interval = f"[{est.ci_low:9.2f}, {est.ci_high:9.2f}]"
         print(f"{name:20s} {est.estimate:9.2f}  95% CI {interval}  ({est.interval})")
@@ -135,6 +138,7 @@ def build_parser() -> argparse.ArgumentParser:
     ate.add_argument("--outcome", default="revenue")
     ate.add_argument("--n-boot", type=int, default=200)
     ate.add_argument("--seed", type=int, default=0)
+    ate.add_argument("--json", action="store_true")
     ate.set_defaults(func=_ate)
     train = sub.add_parser("train", help="train and save the targeting model")
     train.add_argument("--rows", type=int, default=None)

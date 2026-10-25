@@ -39,6 +39,14 @@ def test_generate_campaign_and_estimate_the_ate(tmp_path, capsys):
     assert "aipw" in out and "propensity AUC" in out
 
 
+def test_ate_json_output_parses(tmp_path, capsys):
+    path = tmp_path / "campaign.csv"
+    main(["generate", "campaign", "--n", "2000", "--out", str(path)])
+    capsys.readouterr()
+    assert main(["ate", str(path), "--n-boot", "20", "--json"]) == 0
+    assert "aipw" in json.loads(capsys.readouterr().out)["estimates"]
+
+
 def test_errors_exit_with_code_2(tmp_path, capsys):
     assert main(["analyze", str(tmp_path / "missing.csv")]) == 2
     bad = tmp_path / "bad.csv"

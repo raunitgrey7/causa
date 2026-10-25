@@ -83,15 +83,6 @@ class Estimate:
     ci_high: float
     interval: str
 
-    def covers(self, value: float) -> bool:
-        """Whether the interval contains ``value``."""
-        return self.ci_low <= value <= self.ci_high
-
-    @property
-    def width(self) -> float:
-        """Interval width."""
-        return self.ci_high - self.ci_low
-
 
 @dataclass(frozen=True)
 class ATEResult:
@@ -228,9 +219,10 @@ def estimate_ate(
     if len(names) != X.shape[1]:
         raise ValueError(f"{len(names)} feature names for {X.shape[1]} covariate columns")
     rng = np.random.default_rng(config.seed)
-    Z = Basis.fit(X).transform(X)
+    basis = Basis.fit(X)
+    Z = basis.transform(X)
     n = len(t)
-    ZZ = row_outer(Z) if n * Z.shape[1] ** 2 <= MAX_CACHED_OUTER else None
+    ZZ = row_outer(Z) if n * basis.n_columns**2 <= MAX_CACHED_OUTER else None
     d = _Design(Z, ZZ, t, y, rng.permutation(n) % config.folds, config.ridge, config.clip)
     W = bootstrap_weights(n, config.n_boot, rng)
     everyone = np.ones(n, dtype=bool)
