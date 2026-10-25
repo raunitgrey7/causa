@@ -1,0 +1,61 @@
+[project]
+name = "causa"
+version = "0.1.0"
+description = "Causal inference and experimentation for growth: confounded campaign data with known effects, IPW and doubly robust ATE with bootstrap intervals, CATE learners, uplift targeting under a budget, CUPED, always-valid sequential tests and SRM checks"
+readme = "README.md"
+requires-python = ">=3.13"
+license = { text = "MIT" }
+authors = [{ name = "Raunit Kumar Thakur" }]
+keywords = ["causal-inference", "uplift-modelling", "ab-testing", "experimentation", "cuped", "sequential-testing"]
+dependencies = [
+    "fastapi>=0.115",
+    "joblib>=1.4",
+    "numpy>=2.1",
+    "pandas>=2.2",
+    "prometheus-client>=0.21",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "python-multipart>=0.0.12",
+    "scikit-learn>=1.6",
+    "scipy>=1.14",
+    "threadpoolctl>=3.5",
+    "uvicorn>=0.32",
+]
+
+[project.scripts]
+causa = "causa.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.13.5,<0.14.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "httpx>=0.27",
+    "hypothesis>=6.115",
+    "pytest>=8.3",
+    "pytest-timeout>=2.3",
+    "ruff>=0.8",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py313"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "A", "C4", "SIM", "ANN", "RUF", "PL"]
+ignore = ["ANN401", "PLR0913", "PLR2004", "RUF012", "N803", "N806"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["PLR0915", "PLR0912", "ANN"]
+
+[tool.ruff.lint.pylint]
+max-args = 9
+max-statements = 50
+max-branches = 14
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --timeout=600"
+filterwarnings = ["error::DeprecationWarning:causa.*"]
