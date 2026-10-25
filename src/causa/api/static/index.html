@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>causa dashboard</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+  <div>
+    <h1>causa</h1>
+    <p class="sub">Experiment decisions, uplift targeting and causal benchmarks</p>
+  </div>
+  <div class="header-right">
+    <span id="health" class="pill">checking</span>
+    <label class="key">API key <input id="api-key" type="password" autocomplete="off" placeholder="only if APP_API_KEY is set"></label>
+  </div>
+</header>
+
+<main>
+  <section class="card" id="experiment">
+    <h2>Experiment decision</h2>
+    <p class="hint">Simulate a 14-day checkout test, or upload a CSV with <code>variant</code>, <code>day</code>,
+      <code>revenue</code>, <code>pre_revenue</code>, <code>support_contact</code> and <code>page_load_ms</code>.
+      The verdict uses always-valid intervals, so looking every day is safe.</p>
+    <form id="sim-form" class="grid-form">
+      <label>Users <input name="n_users" type="number" value="40000" min="200" max="200000" step="1000"></label>
+      <label>True lift (%) <input name="lift" type="number" value="8" min="-40" max="99" step="0.5"></label>
+      <label>Logging fault (% of non-buyers lost) <input name="srm_drop" type="number" value="0" min="0" max="49" step="0.5"></label>
+      <label>Support-contact harm (points) <input name="support_harm" type="number" value="0" min="0" max="20" step="0.1"></label>
+      <label>Latency shift (ms) <input name="latency_shift_ms" type="number" value="0" min="-500" max="1000" step="5"></label>
+      <label>Seed <input name="seed" type="number" value="7" min="0" step="1"></label>
+      <button type="submit">Simulate and analyse</button>
+      <label class="file">Or upload CSV <input id="csv-file" type="file" accept=".csv,text/csv"></label>
+    </form>
+    <div id="decision" class="decision hidden"></div>
+    <div class="two-col">
+      <div>
+        <h3>Primary metric</h3>
+        <table id="effect-table" class="kv"></table>
+      </div>
+      <div>
+        <h3>Health checks</h3>
+        <table id="checks-table" class="kv"></table>
+      </div>
+    </div>
+    <h3>Effect by day with the always-valid 95% interval</h3>
+    <div id="cs-chart" class="chart" role="img" aria-label="confidence sequence by day"></div>
+  </section>
+
+  <section class="card" id="targeting">
+    <h2>Uplift targeting</h2>
+    <p class="hint">The serving model was chosen by Qini coefficient on a randomised holdout. The curve is the
+      IPW estimate of incremental revenue per customer from that holdout.</p>
+    <div class="two-col">
+      <div>
+        <h3>Holdout Qini by learner</h3>
+        <div id="qini-bars"></div>
+      </div>
+      <div>
+        <h3>Incremental revenue per customer by budget</h3>
+        <div id="budget-chart" class="chart" role="img" aria-label="incremental revenue by budget"></div>
+      </div>
+    </div>
+    <form id="target-form" class="grid-form">
+      <label>Budget (% of customers) <input name="budget" type="range" min="5" max="100" value="20" step="5"><output id="budget-out">20%</output></label>
+      <label>Cost per contact (INR) <input name="cost" type="number" value="0" min="0" step="1"></label>
+      <button type="submit">Score 500 sample customers</button>
+    </form>
+    <p id="target-summary" class="summary"></p>
+    <table id="target-table" class="data"></table>
+  </section>
+
+  <section class="card" id="benchmark">
+    <h2>Benchmark against ground truth</h2>
+    <p class="hint">From <code>benchmarks/results.json</code>, produced by <code>make bench</code>.</p>
+    <div id="bench-body"><p class="muted">No benchmark results loaded.</p></div>
+  </section>
+
+  <section class="card" id="history">
+    <h2>Recent decision reports</h2>
+    <table id="history-table" class="data"></table>
+  </section>
+</main>
+<script src="/static/app.js"></script>
+</body>
+</html>
