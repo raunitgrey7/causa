@@ -18,7 +18,6 @@ import uvicorn
 from causa.api.app import create_app
 from causa.api.schemas import ExperimentSpecIn, default_guardrails
 from causa.ate import ATEConfig, estimate_ate
-from causa.bench import main as bench_main
 from causa.config import get_settings
 from causa.data.campaign import CampaignConfig, simulate_campaign
 from causa.data.experiments import ExperimentConfig, simulate_experiment
@@ -111,6 +110,10 @@ def _serve(args: argparse.Namespace) -> int:
 
 
 def _bench(args: argparse.Namespace) -> int:
+    # Imported here, not at the top: the benchmark's latency study needs the HTTP test client, a dev-only
+    # dependency, and `causa serve` in a production install must not import it.
+    from causa.bench import main as bench_main  # noqa: PLC0415
+
     return bench_main(args.rest)
 
 

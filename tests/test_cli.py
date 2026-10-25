@@ -1,6 +1,8 @@
 """Command line interface end to end on generated files."""
 
 import json
+import subprocess
+import sys
 
 from causa.cli import main
 
@@ -53,3 +55,10 @@ def test_errors_exit_with_code_2(tmp_path, capsys):
     bad.write_text("variant,revenue\ncontrol,1\n")
     assert main(["analyze", str(bad)]) == 2
     assert "error:" in capsys.readouterr().err
+
+
+def test_server_import_graph_has_no_dev_only_dependencies():
+    # A production install has no httpx2, which Starlette's test client needs; the container check found
+    # `causa serve` crashing on exactly that import before the benchmark import was made lazy.
+    code = "import sys, causa.cli, causa.api.app; sys.exit(int('starlette.testclient' in sys.modules))"
+    assert subprocess.run([sys.executable, "-c", code], check=False).returncode == 0
