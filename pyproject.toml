@@ -3,7 +3,7 @@ name = "causa"
 version = "0.1.0"
 description = "Causal inference and experimentation for growth: confounded campaign data with known effects, IPW and doubly robust ATE with bootstrap intervals, CATE learners, uplift targeting under a budget, CUPED, always-valid sequential tests and SRM checks"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 license = { text = "MIT" }
 authors = [{ name = "Raunit Kumar Thakur" }]
 keywords = ["causal-inference", "uplift-modelling", "ab-testing", "experimentation", "cuped", "sequential-testing"]
@@ -41,7 +41,7 @@ dev = [
 
 [tool.ruff]
 line-length = 110
-target-version = "py313"
+target-version = "py312"
 src = ["src", "tests"]
 
 [tool.ruff.lint]
