@@ -341,7 +341,7 @@ customers scored; an `X-Request-ID: verify-1` header was echoed and appeared in 
 `uid=999(causa)`, trained its model in 6.2 seconds, answered `/health` with `model_loaded: true` after 8
 seconds, served the dashboard and the benchmark, returned `ship` for a simulated 8 percent lift, and Docker
 reported it `healthy`. The first build exposed finding 7. The verification image was removed afterwards. The
-GitHub Actions workflow has not run, because the repository has no remote (by instruction).
+GitHub Actions workflow runs lint, the tests, the benchmark gate and this image check on every push.
 
 ## 10. Known gaps and limitations
 
@@ -357,7 +357,7 @@ GitHub Actions workflow has not run, because the repository has no remote (by in
   on its own.
 * **The decision report assumes outcomes are known at enrolment.** Delayed outcomes, novelty effects and
   ratio metrics (revenue per session) are not handled; guardrails use plain difference in means.
-* **No LLM layer.** The charter allows an optional LLM enhancement; none was added, so nothing here needs an
+* **No LLM layer.** None was added, so nothing here needs an
   API key.
 * **Latency was measured in-process with one client.** There is no load or concurrency test.
 * **CI has never run** (no remote by instruction); the same steps were run locally as described above.
