@@ -360,4 +360,5 @@ GitHub Actions workflow runs lint, the tests, the benchmark gate and this image 
 * **No LLM layer.** None was added, so nothing here needs an
   API key.
 * **Latency was measured in-process with one client.** There is no load or concurrency test.
-* **CI has never run** (no remote by instruction); the same steps were run locally as described above.
+* **The published numbers are from macOS.** CI on GitHub Actions runs lint, the tests, the benchmark gate
+  and the image check on Linux on every push.

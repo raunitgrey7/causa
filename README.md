@@ -20,6 +20,8 @@ scikit-learn, without causal-inference libraries, so each can be checked against
 number in the Results section was produced by `make bench` with seed 42 and copied from
 `benchmarks/results.json`; `tests/test_docs_consistency.py` fails if the two disagree.
 
+![The causa dashboard: experiment decision, uplift targeting and the benchmark against ground truth](docs/dashboard.png)
+
 ## Why
 
 Most causal and experimentation code stops at a point estimate. The failure modes that cost growth teams
